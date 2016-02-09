@@ -52,7 +52,6 @@ namespace OktaMFA_ADFS
             string pin = proofData.Properties["pin"].ToString();
 
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create("https://marcjordan.oktapreview.com/api/v1/users/00u5bjwu5kN4HCRvb0h7/factors/uft5ftmdz7pllPD3X0h7/verify");
-            httprequest.Headers.Add("Accept", "application/json");
             httprequest.Headers.Add("Authorization", "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr");
             httprequest.Method = "POST";
             httprequest.ContentType = "application/json";
@@ -64,22 +63,45 @@ namespace OktaMFA_ADFS
             
                 streamWriter.Write(otpString);
             }
+            try
+            {
+                var httpResponse = (HttpWebResponse)httprequest.GetResponse();
+                if (httpResponse.StatusCode.ToString() == "OK")
+                {
+                 System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                 claims = new System.Security.Claims.Claim[] { claim };
 
-            var httpResponse = (HttpWebResponse)httprequest.GetResponse();
-            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-            {
-                var factorResult = streamReader.ReadToEnd();
+                }
+                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                {
+                    var factorResult = streamReader.ReadToEnd();
+                }
+
             }
-            
-            if (pin == "12345")
+            catch (WebException we)
             {
-                System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                claims = new System.Security.Claims.Claim[] { claim };
-            }
-            else
-            {
+                var failResponse = we.Response as HttpWebResponse;
+                if (failResponse == null)
+                    throw;
                 result = new AdapterPresentation("Authentication failed.", false);
             }
+
+            //
+ //           var httpResponse = (HttpWebResponse)httprequest.GetResponse();
+  //          using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+ //           {
+ //               var factorResult = streamReader.ReadToEnd();
+ //           }
+//            
+ //           if (pin == "12345")
+//            {
+//                System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+ //               claims = new System.Security.Claims.Claim[] { claim };
+ //           }
+ //           else
+ //           {
+ //               result = new AdapterPresentation("Authentication failed.", false);
+ //           }
             return result;
         }
 
