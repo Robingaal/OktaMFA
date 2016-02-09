@@ -1,0 +1,95 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.IO;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.IdentityServer.Web.Authentication.External;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using Newtonsoft.Json;
+
+namespace OktaMFA_ADFS
+{
+    class AuthenticationAdapter : IAuthenticationAdapter
+    {
+        public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
+        {
+            return new AdapterPresentation();
+        }
+
+        public bool IsAvailableForUser(System.Security.Claims.Claim identityClaim, IAuthenticationContext context)
+        {
+            return true;
+        }
+
+        public IAuthenticationAdapterMetadata Metadata
+        {
+            get { return new AuthenticationAdapterMetadata(); }
+        }
+
+        public void OnAuthenticationPipelineLoad(IAuthenticationMethodConfigData configData)
+        {
+
+        }
+
+        public void OnAuthenticationPipelineUnload()
+        {
+
+        }
+
+        public IAdapterPresentation OnError(System.Net.HttpListenerRequest request, ExternalAuthenticationException ex)
+        {
+            return new AdapterPresentation(ex.Message, true);
+        }
+
+        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, System.Net.HttpListenerRequest request, out System.Security.Claims.Claim[] claims)
+        {
+            claims = null;
+            IAdapterPresentation result = null;
+            string pin = proofData.Properties["pin"].ToString();
+
+            HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create("https://marcjordan.oktapreview.com/api/v1/users/00u5bjwu5kN4HCRvb0h7/factors/uft5ftmdz7pllPD3X0h7/verify");
+            httprequest.Headers.Add("Accept", "application/json");
+            httprequest.Headers.Add("Authorization", "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr");
+            httprequest.Method = "POST";
+            httprequest.ContentType = "application/json";
+            otpCode otpCode = new otpCode
+            { passCode = pin };
+            string otpString = JsonConvert.SerializeObject(otpCode);
+            using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
+            {
+            
+                streamWriter.Write(otpString);
+            }
+
+            var httpResponse = (HttpWebResponse)httprequest.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+            {
+                var factorResult = streamReader.ReadToEnd();
+            }
+            
+            if (pin == "12345")
+            {
+                System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                claims = new System.Security.Claims.Claim[] { claim };
+            }
+            else
+            {
+                result = new AdapterPresentation("Authentication failed.", false);
+            }
+            return result;
+        }
+
+
+
+        public class otpCode
+        {
+            public string passCode { get; set; }
+
+
+        }
+    }
+}
