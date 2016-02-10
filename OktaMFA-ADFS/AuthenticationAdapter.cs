@@ -50,9 +50,26 @@ namespace OktaMFA_ADFS
             claims = null;
             IAdapterPresentation result = null;
             string pin = proofData.Properties["pin"].ToString();
+            string tenantName = "marcjordan";
+            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            string userName = "marc.jordan@okta.com";
+            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
-            HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create("https://marcjordan.oktapreview.com/api/v1/users/00u5bjwu5kN4HCRvb0h7/factors/uft5ftmdz7pllPD3X0h7/verify");
-            httprequest.Headers.Add("Authorization", "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr");
+            HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
+            upnRequest.Headers.Add("Authorization", authToken);
+            upnRequest.Method = "GET";
+            upnRequest.ContentType = "application/json";
+            var upnResponse = (HttpWebResponse)upnRequest.GetResponse();
+            var idReader = new StreamReader(upnResponse.GetResponseStream());
+            var id = idReader.ReadToEnd();
+
+            userProfile userProfile = JsonConvert.DeserializeObject<userProfile>(id);
+
+            string userID = userProfile.id.ToString();
+
+
+            HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/uft5ftmdz7pllPD3X0h7/verify");
+            httprequest.Headers.Add("Authorization", authToken);
             httprequest.Method = "POST";
             httprequest.ContentType = "application/json";
             otpCode otpCode = new otpCode
@@ -111,6 +128,26 @@ namespace OktaMFA_ADFS
         {
             public string passCode { get; set; }
 
+
+        }
+
+        public class userProfile
+        {
+            public string id { get; set; }
+            public string status { get; set; }
+            public string lastLogin { get; set; }
+            public string lastUpdated { get; set; }
+            public string passwordChanged { get; set; }
+            public string created { get; set; }
+
+        }
+
+        public string [] IdentityClaims
+        {
+            get
+            {
+                return new string[] { "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn" };
+            }
 
         }
     }

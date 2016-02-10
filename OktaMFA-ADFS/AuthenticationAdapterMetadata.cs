@@ -7,7 +7,7 @@ using Microsoft.IdentityServer.Web.Authentication.External;
 
 namespace OktaMFA_ADFS
 {
-    class AuthenticationAdapterMetadata : IAuthenticationAdapterMetadata
+    public class AuthenticationAdapterMetadata : IAuthenticationAdapterMetadata
     {
         public string AdminName
         {

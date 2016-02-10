@@ -17,55 +17,48 @@ namespace OktaMFA_Console
     {
         static void Main(string[] args)
         {
-          //  claims = null;
+            //claims = null;
             IAdapterPresentation result = null;
-            // string pin = proofData.Properties["pin"].ToString();
-            string pin = Console.ReadLine();
-            HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create("https://marcjordan.oktapreview.com/api/v1/users/00u5bjwu5kN4HCRvb0h7/factors/uft5ftmdz7pllPD3X0h7/verify");
-            httprequest.Headers.Add("Authorization", "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr");
-            httprequest.Method = "POST";
-            httprequest.ContentType = "application/json";
-            otpCode otpCode = new otpCode
-            { passCode = pin };
-            string otpString = JsonConvert.SerializeObject(otpCode);
-            using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
-            {
+            //string pin = proofData.Properties["pin"].ToString();
+            string tenantName = "marcjordan";
+            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            string userName = "marc.jordan@okta.com";
+            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
-                streamWriter.Write(otpString);
-            }
-            try
-            {
-                var httpResponse = (HttpWebResponse)httprequest.GetResponse();
-                if (httpResponse.StatusCode.ToString() == "OK")
-                {
-                    Console.WriteLine("Worked");
-                    Console.ReadLine();
-
-                }
-                using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                {
-                    var factorResult = streamReader.ReadToEnd();
-                }
-
-            }
-            catch (WebException we)
-            {
-                var failResponse = we.Response as HttpWebResponse;
-                if (failResponse == null)
-                    throw;
-                Console.WriteLine("Nope");
+            HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
+            upnRequest.Headers.Add("Authorization", authToken);
+            upnRequest.Method = "GET";
+            upnRequest.ContentType = "application/json";
+            var upnResponse = (HttpWebResponse)upnRequest.GetResponse();
+            var streamReader = new StreamReader(upnResponse.GetResponseStream());
+            var id = streamReader.ReadToEnd();
+                
+                userProfile userProfile = JsonConvert.DeserializeObject<userProfile>(id);
+                Console.WriteLine(userProfile.id);
                 Console.ReadLine();
-            }
 
-            
-           
-       //     return result;
+            //     return result;
         }
+
     }
+
     public class otpCode
     {
         public string passCode { get; set; }
 
 
     }
+
+    public class userProfile
+    {
+        public string id { get; set; }
+        public string status { get; set; }
+        public string lastLogin { get; set; }
+        public string lastUpdated { get; set; }
+        public string passwordChanged { get; set; }
+        public string created { get; set; }
+
+    }
+
+
 }
