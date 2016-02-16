@@ -35,8 +35,17 @@ namespace OktaMFA_Console
                 
                 userProfile userProfile = JsonConvert.DeserializeObject<userProfile>(id);
                 Console.WriteLine(userProfile.id);
-                Console.ReadLine();
 
+
+            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors");
+            factorRequest.Headers.Add("Authorization", authToken);
+            factorRequest.Method = "GET";
+            factorRequest.ContentType = "application/json";
+            factorRequest.Accept = "application/json";
+            var factorResponse = (HttpWebResponse)factorRequest.GetResponse();
+            var factorReader = new StreamReader(factorResponse.GetResponseStream());
+
+            Console.ReadLine();
             //     return result;
         }
 

@@ -73,6 +73,14 @@ namespace OktaMFA_ADFS
 
             string userID = userProfile.id.ToString();
 
+            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors");
+            factorRequest.Headers.Add("Authorization", authToken);
+            factorRequest.Method = "GET";
+            factorRequest.ContentType = "application/json";
+            factorRequest.Accept = "application/json";
+            var factorResponse = (HttpWebResponse)factorRequest.GetResponse();
+            var factorReader = new StreamReader(factorResponse.GetResponseStream());
+
 
             HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/uft5ftmdz7pllPD3X0h7/verify");
             httprequest.Headers.Add("Authorization", authToken);
