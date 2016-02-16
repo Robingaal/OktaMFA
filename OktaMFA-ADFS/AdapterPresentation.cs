@@ -11,6 +11,8 @@ namespace OktaMFA_ADFS
     {
         private string message;
         private bool isPermanentFailure;
+        private string upn;
+
         public string GetPageTitle(int lcid)
         {
             return "Okta MFA Provider";
@@ -30,6 +32,7 @@ namespace OktaMFA_ADFS
                 result += "<input id=\"context\" type=\"hidden\" name=\"Context\" value=\"%Context%\"/>";
                 result += "<input id=\"authMethod\" type=\"hidden\" name=\"AuthMethod\" value=\"%AuthMethod%\"/>";
                 result += "<input id=\"continueButton\" type=\"submit\" name=\"Continue\" value=\"Continue\" />";
+                result += "<input id=\"upn\" type=\"hidden\" name=\"upn\" value=\"" + this.upn + "\"/>";
                 result += "</form>";
             }
             return result;
@@ -48,6 +51,20 @@ namespace OktaMFA_ADFS
         {
             this.message = message;
             this.isPermanentFailure = isPermanentFailure;
+        }
+
+        public AdapterPresentation(string upn)
+        {
+            this.message = string.Empty;
+            this.isPermanentFailure = false;
+            this.upn = upn;
+        }
+
+        public AdapterPresentation(string message, string upn, bool isPermanentFailure)
+        {
+            this.message = message;
+            this.isPermanentFailure = isPermanentFailure;
+            this.upn = upn;
         }
     }
 }

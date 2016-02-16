@@ -18,7 +18,9 @@ namespace OktaMFA_ADFS
         public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
             string upn = identityClaim.Value;
-            return new AdapterPresentation();
+
+
+            return new AdapterPresentation(upn);
 
         }
 
@@ -47,14 +49,16 @@ namespace OktaMFA_ADFS
             return new AdapterPresentation(ex.Message, true);
         }
 
-        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, System.Net.HttpListenerRequest request, out System.Security.Claims.Claim[] claims, System.Security.Claims.Claim identityClaim)
+        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, System.Net.HttpListenerRequest request, out System.Security.Claims.Claim[] claims )
         {
             claims = null;
             IAdapterPresentation result = null;
+            //AuthenticationAdapterMetadata Metadata = new AuthenticationAdapterMetadata();
+            //string[] upn = Metadata.IdentityClaims;
+            string userName = proofData.Properties["upn"].ToString();
             string pin = proofData.Properties["pin"].ToString();
             string tenantName = "marcjordan";
             string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
-            string userName = identityClaim.ToString(); 
             string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
             HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
