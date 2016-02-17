@@ -44,6 +44,18 @@ namespace OktaMFA_Console
             factorRequest.Accept = "application/json";
             var factorResponse = (HttpWebResponse)factorRequest.GetResponse();
             var factorReader = new StreamReader(factorResponse.GetResponseStream());
+            var factorList = factorReader.ReadToEnd();
+
+            RootObject[] factors = JsonConvert.DeserializeObject<RootObject[]>(factorList);
+            foreach (RootObject factor in factors)
+            {
+                if (factor.provider == "OKTA" && factor.factorType == "token:software:totp")
+                {
+                    string factorID = factor.id;
+                }
+
+            }
+           // Console.WriteLine(factors.factorType);
 
             Console.ReadLine();
             //     return result;
@@ -67,6 +79,77 @@ namespace OktaMFA_Console
         public string passwordChanged { get; set; }
         public string created { get; set; }
 
+    }
+
+    public class Key
+    {
+        public string kty { get; set; }
+        public string use { get; set; }
+        public string kid { get; set; }
+        public List<string> x5c { get; set; }
+    }
+
+    public class Profile
+    {
+        public string credentialId { get; set; }
+        public string phoneNumber { get; set; }
+        public string deviceType { get; set; }
+        public List<Key> keys { get; set; }
+        public string name { get; set; }
+        public string platform { get; set; }
+        public string version { get; set; }
+    }
+
+    public class Hints
+    {
+        public List<string> allow { get; set; }
+    }
+
+    public class Verify
+    {
+        public string href { get; set; }
+        public Hints hints { get; set; }
+    }
+
+    public class Hints2
+    {
+        public List<string> allow { get; set; }
+    }
+
+    public class Self
+    {
+        public string href { get; set; }
+        public Hints2 hints { get; set; }
+    }
+
+    public class Hints3
+    {
+        public List<string> allow { get; set; }
+    }
+
+    public class User
+    {
+        public string href { get; set; }
+        public Hints3 hints { get; set; }
+    }
+
+    public class Links
+    {
+        public Verify verify { get; set; }
+        public Self self { get; set; }
+        public User user { get; set; }
+    }
+
+    public class RootObject
+    {
+        public string id { get; set; }
+        public string factorType { get; set; }
+        public string provider { get; set; }
+        public string status { get; set; }
+        public string created { get; set; }
+        public string lastUpdated { get; set; }
+        public Profile profile { get; set; }
+        public Links _links { get; set; }
     }
 
 
