@@ -54,6 +54,18 @@ namespace OktaMFA_Console
                     string factorID = factor.id;
                 }
 
+                if (factor.provider == "OKTA" && factor.factorType == "push")
+                {
+                    string factorID = factor.id;
+                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + factorID + "/verify");
+                    pushRequest.Headers.Add("Authorization", authToken);
+                    pushRequest.Method = "POST";
+                    pushRequest.ContentType = "application/json";
+                    pushRequest.Accept = "application/json";
+                    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+
+                }
             }
            // Console.WriteLine(factors.factorType);
 
