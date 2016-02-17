@@ -98,6 +98,12 @@ namespace OktaMFA_Console
         public string name { get; set; }
         public string platform { get; set; }
         public string version { get; set; }
+        public string email { get; set; }
+        public string firstName { get; set; }
+        public string lastName { get; set; }
+        public string login { get; set; }
+        public object mobilePhone { get; set; }
+        public object secondEmail { get; set; }
     }
 
     public class Hints
@@ -138,6 +144,13 @@ namespace OktaMFA_Console
         public Verify verify { get; set; }
         public Self self { get; set; }
         public User user { get; set; }
+        public ResetPassword resetPassword { get; set; }
+        public ResetFactors resetFactors { get; set; }
+        public ExpirePassword expirePassword { get; set; }
+        public ForgotPassword forgotPassword { get; set; }
+        public ChangeRecoveryQuestion changeRecoveryQuestion { get; set; }
+        public Deactivate deactivate { get; set; }
+        public ChangePassword changePassword { get; set; }
     }
 
     public class RootObject
@@ -150,6 +163,77 @@ namespace OktaMFA_Console
         public string lastUpdated { get; set; }
         public Profile profile { get; set; }
         public Links _links { get; set; }
+        public object activated { get; set; }
+        public string statusChanged { get; set; }
+        public string lastLogin { get; set; }
+        public string passwordChanged { get; set; }
+        public Credentials credentials { get; set; }
+    }
+
+
+
+    public class Password
+    {
+    }
+
+    public class RecoveryQuestion
+    {
+        public string question { get; set; }
+    }
+
+    public class Provider
+    {
+        public string type { get; set; }
+        public string name { get; set; }
+    }
+
+    public class Credentials
+    {
+        public Password password { get; set; }
+        public RecoveryQuestion recovery_question { get; set; }
+        public Provider provider { get; set; }
+    }
+
+    public class ResetPassword
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class ResetFactors
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class ExpirePassword
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class ForgotPassword
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class ChangeRecoveryQuestion
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class Deactivate
+    {
+        public string href { get; set; }
+        public string method { get; set; }
+    }
+
+    public class ChangePassword
+    {
+        public string href { get; set; }
+        public string method { get; set; }
     }
 
 
