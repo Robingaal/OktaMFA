@@ -10,6 +10,8 @@ using Microsoft.IdentityServer.Web.Authentication.External;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using System.Timers;
+using System.Threading;
 
 namespace OktaMFA_ADFS
 {
@@ -91,15 +93,45 @@ namespace OktaMFA_ADFS
 
                 if (factor.provider == "OKTA" && factor.factorType == "push")
                 {
-                    factorID = factor.id;
-                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + factorID + "/verify");
+                   string pushfactorID = factor.id;
+                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
                     pushRequest.Headers.Add("Authorization", authToken);
                     pushRequest.Method = "POST";
                     pushRequest.ContentType = "application/json";
                     pushRequest.Accept = "application/json";
                     pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
                     var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+                    var pushReader = new StreamReader(pushResponse.GetResponseStream());
+                    var pushStatus = pushReader.ReadToEnd();
+                    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
 
+                    string verifyResult = "false";
+
+                    //while (verifyResult == "false")
+                    //{
+                    //    HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(pushResult._links.poll.href.ToString());
+                    //    verifyRequest.Headers.Add("Authorization", authToken);
+                    //    verifyRequest.Method = "GET";
+                    //    verifyRequest.ContentType = "application/json";
+                    //    verifyRequest.Accept = "application/json";
+                    //    verifyRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    //    var pushAnswer = (HttpWebResponse)verifyRequest.GetResponse();
+                    //    var pushStatus2 = new StreamReader(pushAnswer.GetResponseStream());
+                    //    var pushStatus3 = pushStatus2.ReadToEnd();
+                    //    RootObject pushWait = JsonConvert.DeserializeObject<RootObject>(pushStatus3);
+                    //    if (pushWait.factorResult != "SUCCESS")
+                    //    {
+                    //        Thread.Sleep(200);
+                    //    }
+                    //    else
+                    //    {
+                    //        verifyResult = "true";
+
+                    //    }
+                    //}
+                    //System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                    // claims = new System.Security.Claims.Claim[] { claim };
+                    // return result;
                 }
 
             }
@@ -232,6 +264,9 @@ namespace OktaMFA_ADFS
             public ChangeRecoveryQuestion changeRecoveryQuestion { get; set; }
             public Deactivate deactivate { get; set; }
             public ChangePassword changePassword { get; set; }
+            public Poll poll { get; set; }
+            public Cancel cancel { get; set; }
+
         }
 
         public class RootObject
@@ -249,6 +284,8 @@ namespace OktaMFA_ADFS
             public string lastLogin { get; set; }
             public string passwordChanged { get; set; }
             public Credentials credentials { get; set; }
+            public string factorResult { get; set; }
+            public string expiresAt { get; set; }
         }
 
 
@@ -315,6 +352,18 @@ namespace OktaMFA_ADFS
         {
             public string href { get; set; }
             public string method { get; set; }
+        }
+
+        public class Cancel
+        {
+            public string href { get; set; }
+            public Hints2 hints { get; set; }
+        }
+
+        public class Poll
+        {
+            public string href { get; set; }
+            public Hints hints { get; set; }
         }
 
     }
