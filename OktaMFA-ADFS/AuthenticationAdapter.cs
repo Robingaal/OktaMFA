@@ -20,9 +20,59 @@ namespace OktaMFA_ADFS
         public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
             string upn = identityClaim.Value;
+            string tenantName = "marcjordan";
+            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
+            HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + upn);
+            upnRequest.Headers.Add("Authorization", authToken);
+            upnRequest.Method = "GET";
+            upnRequest.ContentType = "application/json";
+            var upnResponse = (HttpWebResponse)upnRequest.GetResponse();
+            var idReader = new StreamReader(upnResponse.GetResponseStream());
+            var id = idReader.ReadToEnd();
 
-            return new AdapterPresentation(upn);
+            RootObject userProfile = JsonConvert.DeserializeObject<RootObject>(id);
+
+            string userID = userProfile.id.ToString();
+
+            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors");
+            factorRequest.Headers.Add("Authorization", authToken);
+            factorRequest.Method = "GET";
+            factorRequest.ContentType = "application/json";
+            factorRequest.Accept = "application/json";
+            var factorResponse = (HttpWebResponse)factorRequest.GetResponse();
+            var factorReader = new StreamReader(factorResponse.GetResponseStream());
+            var factorList = factorReader.ReadToEnd();
+
+            RootObject[] factors = JsonConvert.DeserializeObject<RootObject[]>(factorList);
+            string factorID = "";
+            foreach (RootObject factor in factors)
+            {
+                if (factor.provider == "OKTA" && factor.factorType == "token:software:totp")
+                {
+                    factorID = factor.id;
+                }
+
+                if (factor.provider == "OKTA" && factor.factorType == "push")
+                {
+                    string pushfactorID = factor.id;
+                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
+                    pushRequest.Headers.Add("Authorization", authToken);
+                    pushRequest.Method = "POST";
+                    pushRequest.ContentType = "application/json";
+                    pushRequest.Accept = "application/json";
+                    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+                    var pushReader = new StreamReader(pushResponse.GetResponseStream());
+                    var pushStatus = pushReader.ReadToEnd();
+                    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
+
+                    string verifyResult = "false";
+                }
+            }
+
+                    return new AdapterPresentation(upn);
 
         }
 
@@ -94,18 +144,18 @@ namespace OktaMFA_ADFS
                 if (factor.provider == "OKTA" && factor.factorType == "push")
                 {
                    string pushfactorID = factor.id;
-                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
-                    pushRequest.Headers.Add("Authorization", authToken);
-                    pushRequest.Method = "POST";
-                    pushRequest.ContentType = "application/json";
-                    pushRequest.Accept = "application/json";
-                    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-                    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
-                    var pushReader = new StreamReader(pushResponse.GetResponseStream());
-                    var pushStatus = pushReader.ReadToEnd();
-                    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
+                    //HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
+                    //pushRequest.Headers.Add("Authorization", authToken);
+                    //pushRequest.Method = "POST";
+                    //pushRequest.ContentType = "application/json";
+                    //pushRequest.Accept = "application/json";
+                    //pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    //var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+                    //var pushReader = new StreamReader(pushResponse.GetResponseStream());
+                    //var pushStatus = pushReader.ReadToEnd();
+                    //RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
 
-                    string verifyResult = "false";
+                    //string verifyResult = "false";
 
                     //while (verifyResult == "false")
                     //{
