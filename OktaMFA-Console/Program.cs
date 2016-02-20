@@ -11,6 +11,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
 using System.Threading;
+using System.Configuration;
 
 namespace OktaMFA_Console
 {
@@ -22,9 +23,21 @@ namespace OktaMFA_Console
             IAdapterPresentation result = null;
             //string pin = proofData.Properties["pin"].ToString();
             string tenantName = "marcjordan";
-            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            //string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
             string userName = "marc.jordan@okta.com";
-            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+            //string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+            //var oktaTenant = ConfigurationManager.AppSettings["Tenant"];
+            //var oktaKey = ConfigurationManager.AppSettings["apiKey"];
+            System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
+            string filepath = @"C:\Admin\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = filepath;
+            System.Configuration.Configuration cfg =
+            System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
+            string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
+            string authToken = cfg.AppSettings.Settings["apiKey"].Value;
+            //string upn = identityClaim.Value;
+            //string tenantName = "marcjordan";
+            string baseUrl = oktaTenant + "/api/v1/";
             string pinSuccess = "no";
             string verifyResult = "false";
 
