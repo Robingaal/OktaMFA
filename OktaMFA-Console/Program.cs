@@ -25,6 +25,9 @@ namespace OktaMFA_Console
             string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
             string userName = "marc.jordan@okta.com";
             string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+            string pinSuccess = "no";
+            string verifyResult = "false";
+
 
             HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
             upnRequest.Headers.Add("Authorization", authToken);
@@ -50,42 +53,94 @@ namespace OktaMFA_Console
             RootObject[] factors = JsonConvert.DeserializeObject<RootObject[]>(factorList);
             foreach (RootObject factor in factors)
             {
+                if (factor.provider == "OKTA" && factor.factorType == "push")
+                {
+                    string pushfactorID = factor.id;
+                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + pushfactorID + "/verify");
+                    pushRequest.Headers.Add("Authorization", authToken);
+                    pushRequest.Method = "POST";
+                    pushRequest.ContentType = "application/json";
+                    pushRequest.Accept = "application/json";
+                    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+                    var pushReader = new StreamReader(pushResponse.GetResponseStream());
+                    var pushStatus = pushReader.ReadToEnd();
+                    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
+                    string pollingEndpoint = pushResult._links.poll.href.ToString();
+
+
+                    int attemptPoll = 1;
+                    while (verifyResult == "false" && attemptPoll <= 200 && pinSuccess == "no")
+                    {
+                        HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(pollingEndpoint);
+                        verifyRequest.Headers.Add("Authorization", authToken);
+                        verifyRequest.Method = "GET";
+                        verifyRequest.ContentType = "application/json";
+                        verifyRequest.Accept = "application/json";
+                        verifyRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                        var pushAnswer = (HttpWebResponse)verifyRequest.GetResponse();
+                        var pushStatus2 = new StreamReader(pushAnswer.GetResponseStream());
+                        var pushStatus3 = pushStatus2.ReadToEnd();
+                        RootObject pushWait = JsonConvert.DeserializeObject<RootObject>(pushStatus3);
+                        if (pushWait.factorResult == "SUCCESS")
+                        {
+                            verifyResult = "true";
+                            //Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                            //claims = new Claim[] { claim };
+                            //Console.WriteLine("Verify Success");
+                        }
+                        else
+                        {
+                            attemptPoll++;
+
+                        }
+
+
+                    }
+                    Console.WriteLine(result);
+
+                }
                 if (factor.provider == "OKTA" && factor.factorType == "token:software:totp")
                 {
                     Console.WriteLine("Enter Pin");
                     string pin = Console.ReadLine();
                     string factorID = factor.id;
-                            HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + factorID + "/verify");
-                            httprequest.Headers.Add("Authorization", authToken);
-                            httprequest.Method = "POST";
-                            httprequest.ContentType = "application/json";
-                            otpCode otpCode = new otpCode
-                            { passCode = pin };
-                            string otpString = JsonConvert.SerializeObject(otpCode);
-                            using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
-                            {
+                    HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + factorID + "/verify");
+                    httprequest.Headers.Add("Authorization", authToken);
+                    httprequest.Method = "POST";
+                    httprequest.ContentType = "application/json";
+                    otpCode otpCode = new otpCode
+                    { passCode = pin };
+                    string otpString = JsonConvert.SerializeObject(otpCode);
+                    using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
+                    {
 
-                                streamWriter.Write(otpString);
-                            }
-                            try
-                            {
-                                var httpResponse = (HttpWebResponse)httprequest.GetResponse();
-                                if (httpResponse.StatusCode.ToString() == "OK")
-                                {
-                            Console.WriteLine("Meow");
-                                    // pinSuccess = "yes";
-                                    System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                                    //claims = new System.Security.Claims.Claim[] { claim };
+                        streamWriter.Write(otpString);
+                    }
+                    try
+                    {
+                        var httpResponse = (HttpWebResponse)httprequest.GetResponse();
+                        if (httpResponse.StatusCode.ToString() == "OK" && pin != "")
+                        {
+                            pinSuccess = "yes";
+                            //Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                            //claims = new Claim[] { claim };
+                            //Console.WriteLine("Pin Success");
 
-                                }
+                        }
 
-                               // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                             //   {
-                             //       var factorResult = streamReader.ReadToEnd();
-                          //      }
+                        // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        //  {
+                        //       var factorResult = streamReader.ReadToEnd();
+                        //   }
 
-                            }
-                            catch (WebException we)
+                        // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                        //   {
+                        //       var factorResult = streamReader.ReadToEnd();
+                        //      }
+
+                    }
+                    catch (WebException we)
                             {
                                 var failResponse = we.Response as HttpWebResponse;
                                 if (failResponse == null)
@@ -95,8 +150,20 @@ namespace OktaMFA_Console
                         }
                     }
 
-             
-                    Console.ReadLine();
+            if (pinSuccess == "yes" || verifyResult == "true")
+            {
+                Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                //claims = new Claim[] { claim };
+                Console.WriteLine("we good");
+            }
+            else
+            {
+                Console.WriteLine("It's broke");
+                //result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
+            }
+
+            Console.WriteLine("Status is, Pin:" + pinSuccess + " Push:" + verifyResult);
+            Console.ReadLine();
 
         // Console.WriteLine(factors.factorType);
 

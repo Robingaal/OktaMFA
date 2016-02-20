@@ -27,6 +27,7 @@ namespace OktaMFA_ADFS
             string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
             string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
             string pinSuccess = "no";
+            string verifyResult = "false";
             string pollingEndpoint = "";
             bool isPermanentFailure = false;
             string message = string.Empty;
@@ -111,7 +112,7 @@ namespace OktaMFA_ADFS
             string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
             string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
             string pinSuccess = "no";
-            
+            string verifyResult = "false";
 
             HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
             upnRequest.Headers.Add("Authorization", authToken);
@@ -138,7 +139,54 @@ namespace OktaMFA_ADFS
             string factorID = "";
             foreach (RootObject factor in factors)
             {
-                if (factor.provider == "OKTA" && factor.factorType == "token:software:totp")
+                if (factor.provider == "OKTA" && factor.factorType == "push")
+                {
+                    //   string pushfactorID = factor.id;
+                    //    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
+                    //    pushRequest.Headers.Add("Authorization", authToken);
+                    //    pushRequest.Method = "POST";
+                    //    pushRequest.ContentType = "application/json";
+                    //    pushRequest.Accept = "application/json";
+                    //    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                    //    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
+                    //    var pushReader = new StreamReader(pushResponse.GetResponseStream());
+                    //    var pushStatus = pushReader.ReadToEnd();
+                    //    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
+                    //    string pollingEndpoint = pushResult._links.poll.href.ToString();
+
+
+                    int attemptPoll = 1;
+                    while (verifyResult == "false" && attemptPoll <= 20 && pinSuccess == "no")
+                    {
+                        HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(pollingEndpoint);
+                        verifyRequest.Headers.Add("Authorization", authToken);
+                        verifyRequest.Method = "GET";
+                        verifyRequest.ContentType = "application/json";
+                        verifyRequest.Accept = "application/json";
+                        verifyRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
+                        var pushAnswer = (HttpWebResponse)verifyRequest.GetResponse();
+                        var pushStatus2 = new StreamReader(pushAnswer.GetResponseStream());
+                        var pushStatus3 = pushStatus2.ReadToEnd();
+                        RootObject pushWait = JsonConvert.DeserializeObject<RootObject>(pushStatus3);
+                        if (pushWait.factorResult == "SUCCESS")
+                        {
+                            verifyResult = "true";
+                            Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                            claims = new Claim[] { claim };
+                            return result;
+                        }
+                        else
+                        {
+                            attemptPoll++;
+
+                        }
+
+
+                    }
+                    return result;
+
+                }
+                if (factor.provider == "OKTA" && factor.factorType == "token:software:totp" && verifyResult == "false" && pin != "")
                 {
                     factorID = factor.id;
                     HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + factorID + "/verify");
@@ -156,21 +204,18 @@ namespace OktaMFA_ADFS
                     try
                     {
                        var httpResponse = (HttpWebResponse)httprequest.GetResponse();
-                        if (httpResponse.StatusCode.ToString() == "OK" && pin != "")
+                        if (httpResponse.StatusCode.ToString() == "OK" && pin != "" )
                         {
                             pinSuccess = "yes";
-                            System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                            claims = new System.Security.Claims.Claim[] { claim };
+                            Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                            claims = new Claim[] { claim };
+                            return result;
+                        }
 
-                        }
-                        if (pin == "")
-                        {
-                            result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
-                        }
-                        using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                        {
-                            var factorResult = streamReader.ReadToEnd();
-                        }
+                       // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+                      //  {
+                     //       var factorResult = streamReader.ReadToEnd();
+                     //   }
 
                     }
                     catch (WebException we)
@@ -182,52 +227,6 @@ namespace OktaMFA_ADFS
                     }
                 }
 
-                if (factor.provider == "OKTA" && factor.factorType == "push")
-                {
-                    //   string pushfactorID = factor.id;
-                    //    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + pushfactorID + "/verify");
-                    //    pushRequest.Headers.Add("Authorization", authToken);
-                    //    pushRequest.Method = "POST";
-                    //    pushRequest.ContentType = "application/json";
-                    //    pushRequest.Accept = "application/json";
-                    //    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-                    //    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
-                    //    var pushReader = new StreamReader(pushResponse.GetResponseStream());
-                    //    var pushStatus = pushReader.ReadToEnd();
-                    //    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
-                    //    string pollingEndpoint = pushResult._links.poll.href.ToString();
-
-                    string verifyResult = "false";
-                    int attemptPoll = 1;
-                    while (verifyResult == "false" && attemptPoll <= 200 && pinSuccess == "no")
-                    {
-                        HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(pollingEndpoint);
-                        verifyRequest.Headers.Add("Authorization", authToken);
-                        verifyRequest.Method = "GET";
-                        verifyRequest.ContentType = "application/json";
-                        verifyRequest.Accept = "application/json";
-                        verifyRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-                        var pushAnswer = (HttpWebResponse)verifyRequest.GetResponse();
-                        var pushStatus2 = new StreamReader(pushAnswer.GetResponseStream());
-                        var pushStatus3 = pushStatus2.ReadToEnd();
-                        RootObject pushWait = JsonConvert.DeserializeObject<RootObject>(pushStatus3);
-                        if (pushWait.factorResult == "SUCCESS")
-                        {
-                            verifyResult = "true";
-                            System.Security.Claims.Claim claim = new System.Security.Claims.Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                            claims = new System.Security.Claims.Claim[] { claim };
-                            return result;
-                        }
-                        else
-                        {
-                            attemptPoll++;
-
-                        }
-
-
-                    }
-
-                }
 
             }
 
@@ -240,7 +239,7 @@ namespace OktaMFA_ADFS
             //string otpString = JsonConvert.SerializeObject(otpCode);
             //using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
             //{
-            
+
             //    streamWriter.Write(otpString);
             //}
             //try
@@ -265,7 +264,16 @@ namespace OktaMFA_ADFS
             //        throw;
             //    result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
             //}
-
+            if (pinSuccess == "yes" || verifyResult == "true")
+            {
+                Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                claims = new Claim[] { claim };
+                return result;
+            }
+            else
+            {
+                result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
+            }
             return result;
         }
 
