@@ -12,6 +12,7 @@ namespace OktaMFA_ADFS
         private string message;
         private bool isPermanentFailure;
         private string upn;
+        public string pollingEndpoint;
 
         public string GetPageTitle(int lcid)
         {
@@ -33,6 +34,7 @@ namespace OktaMFA_ADFS
                 result += "<input id=\"authMethod\" type=\"hidden\" name=\"AuthMethod\" value=\"%AuthMethod%\"/>";
                 result += "<input id=\"continueButton\" type=\"submit\" name=\"Continue\" value=\"Continue\" />";
                 result += "<input id=\"upn\" type=\"hidden\" name=\"upn\" value=\"" + this.upn + "\"/>";
+                result += "<input id=\"pollingEndpoint\" type=\"hidden\" name=\"pollingEndpoint\" value=\"" + this.pollingEndpoint + "\"/>";
                 result += "</form>";
             }
             return result;
@@ -58,6 +60,14 @@ namespace OktaMFA_ADFS
             this.message = string.Empty;
             this.isPermanentFailure = false;
             this.upn = upn;
+        }
+
+        public AdapterPresentation(string message, string upn, bool isPermanentFailure, string pollingEndpoint)
+        {
+            this.message = string.Empty;
+            this.isPermanentFailure = false;
+            this.upn = upn;
+            this.pollingEndpoint = pollingEndpoint;
         }
 
         public AdapterPresentation(string message, string upn, bool isPermanentFailure)
