@@ -23,17 +23,18 @@ namespace OktaMFA_ADFS
     {
         public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
-            //System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            //fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
-            //System.Configuration.Configuration cfg =
-            //System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
-            //string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
-            //string authToken = cfg.AppSettings.Settings["apiKey"].Value;
+            System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
+            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
+            System.Configuration.Configuration cfg =
+            System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
+            string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
+            string authToken = cfg.AppSettings.Settings["apiKey"].Value;
             string upn = identityClaim.Value;
-            string tenantName = "marcjordan";
-            //string baseUrl = oktaTenant + "/api/v1/";
-            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
-            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+            string baseUrl = oktaTenant + "/api/v1/";
+
+            //string tenantName = "marcjordan";
+            //string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            //string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
             string pinSuccess = "no";
             string verifyResult = "false";

@@ -10,49 +10,50 @@ using Microsoft.IdentityServer.Web.Authentication.External;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using Newtonsoft.Json;
+using System.Timers;
 using System.Threading;
 using System.Configuration;
 
-namespace OktaMFA_Console
+namespace OktaMFASMS_ADFS
 {
-    class Program
-    {
-        static void Main(string[] args)
-        {
-            //claims = null;
-            IAdapterPresentation result = null;
-            //string pin = proofData.Properties["pin"].ToString();
-            string tenantName = "marcjordan";
-            string userName = "marc.jordan@okta.com";
-            //string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
-            //string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
 
+    class AuthenticationAdapter : IAuthenticationAdapter
+    {
+        public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
+        {
             System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename = @"C:\Admin\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
             System.Configuration.Configuration cfg =
             System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
             string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
             string authToken = cfg.AppSettings.Settings["apiKey"].Value;
-            //string upn = identityClaim.Value;
-            //string tenantName = "marcjordan";
+            string upn = identityClaim.Value;
             string baseUrl = oktaTenant + "/api/v1/";
+
+            //string tenantName = "marcjordan";
+            //string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
+            //string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+
             string pinSuccess = "no";
             string verifyResult = "false";
+            string userID = "";
+            bool isPermanentFailure = false;
+            string message = string.Empty;
 
 
-            HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userName);
+            HttpWebRequest upnRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + upn);
             upnRequest.Headers.Add("Authorization", authToken);
             upnRequest.Method = "GET";
             upnRequest.ContentType = "application/json";
             var upnResponse = (HttpWebResponse)upnRequest.GetResponse();
-            var streamReader = new StreamReader(upnResponse.GetResponseStream());
-            var id = streamReader.ReadToEnd();
+            var idReader = new StreamReader(upnResponse.GetResponseStream());
+            var id = idReader.ReadToEnd();
 
-            userProfile userProfile = JsonConvert.DeserializeObject<userProfile>(id);
-            Console.WriteLine(userProfile.id);
+            RootObject userProfile = JsonConvert.DeserializeObject<RootObject>(id);
 
+            userID = userProfile.id.ToString();
 
-            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors");
+            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors");
             factorRequest.Headers.Add("Authorization", authToken);
             factorRequest.Method = "GET";
             factorRequest.ContentType = "application/json";
@@ -63,60 +64,80 @@ namespace OktaMFA_Console
 
             RootObject[] factors = JsonConvert.DeserializeObject<RootObject[]>(factorList);
             foreach (RootObject factor in factors)
-            {
-                if (factor.provider == "OKTA" && factor.factorType == "push")
+                if (factor.factorType == "sms")
                 {
-                    string pushfactorID = factor.id;
-                    HttpWebRequest pushRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + pushfactorID + "/verify");
-                    pushRequest.Headers.Add("Authorization", authToken);
-                    pushRequest.Method = "POST";
-                    pushRequest.ContentType = "application/json";
-                    pushRequest.Accept = "application/json";
-                    pushRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-                    var pushResponse = (HttpWebResponse)pushRequest.GetResponse();
-                    var pushReader = new StreamReader(pushResponse.GetResponseStream());
-                    var pushStatus = pushReader.ReadToEnd();
-                    RootObject pushResult = JsonConvert.DeserializeObject<RootObject>(pushStatus);
-                    string pollingEndpoint = pushResult._links.poll.href.ToString();
-
-
-                    int attemptPoll = 1;
-                    while (verifyResult == "false" && attemptPoll <= 200 && pinSuccess == "no")
-                    {
-                        HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(pollingEndpoint);
-                        verifyRequest.Headers.Add("Authorization", authToken);
-                        verifyRequest.Method = "GET";
-                        verifyRequest.ContentType = "application/json";
-                        verifyRequest.Accept = "application/json";
-                        verifyRequest.UserAgent = "Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/47.0.2526.111 Safari/537.36";
-                        var pushAnswer = (HttpWebResponse)verifyRequest.GetResponse();
-                        var pushStatus2 = new StreamReader(pushAnswer.GetResponseStream());
-                        var pushStatus3 = pushStatus2.ReadToEnd();
-                        RootObject pushWait = JsonConvert.DeserializeObject<RootObject>(pushStatus3);
-                        if (pushWait.factorResult == "SUCCESS")
-                        {
-                            verifyResult = "true";
-                            //Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                            //claims = new Claim[] { claim };
-                            //Console.WriteLine("Verify Success");
-                        }
-                        else
-                        {
-                            attemptPoll++;
-
-                        }
-
-
-                    }
-                    Console.WriteLine(result);
-
+                    string smsfactorID = factor.id;
+                    HttpWebRequest smsRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + smsfactorID + "/verify");
+                    smsRequest.Headers.Add("Authorization", authToken);
+                    smsRequest.Method = "POST";
+                    smsRequest.ContentType = "application/json";
+                    smsRequest.Accept = "application/json";
+                    var smsResponse = (HttpWebResponse)smsRequest.GetResponse();
                 }
-                if (factor.provider == "OKTA" && factor.factorType == "token:software:totp")
+            return new AdapterPresentation(message, upn, isPermanentFailure, userID);
+
+        }
+
+        public bool IsAvailableForUser(System.Security.Claims.Claim identityClaim, IAuthenticationContext context)
+        {
+            return true;
+        }
+
+        public IAuthenticationAdapterMetadata Metadata
+        {
+            get { return new AuthenticationAdapterMetadata(); }
+        }
+
+        public void OnAuthenticationPipelineLoad(IAuthenticationMethodConfigData configData)
+        {
+
+        }
+
+        public void OnAuthenticationPipelineUnload()
+        {
+
+        }
+
+        public IAdapterPresentation OnError(System.Net.HttpListenerRequest request, ExternalAuthenticationException ex)
+        {
+            return new AdapterPresentation(ex.Message, true);
+        }
+
+        public IAdapterPresentation TryEndAuthentication(IAuthenticationContext context, IProofData proofData, System.Net.HttpListenerRequest request, out System.Security.Claims.Claim[] claims)
+        {
+            claims = null;
+            IAdapterPresentation result = null;
+            string userName = proofData.Properties["upn"].ToString();
+            string userID = proofData.Properties["userID"].ToString();
+            string pin = proofData.Properties["pin"].ToString();
+            System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
+            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
+            System.Configuration.Configuration cfg =
+            System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
+            string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
+            string authToken = cfg.AppSettings.Settings["apiKey"].Value;
+            string baseUrl = oktaTenant + "/api/v1/";
+            string pinSuccess = "no";
+            string verifyResult = "false";
+
+            HttpWebRequest factorRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors");
+            factorRequest.Headers.Add("Authorization", authToken);
+            factorRequest.Method = "GET";
+            factorRequest.ContentType = "application/json";
+            factorRequest.Accept = "application/json";
+            var factorResponse = (HttpWebResponse)factorRequest.GetResponse();
+            var factorReader = new StreamReader(factorResponse.GetResponseStream());
+            var factorList = factorReader.ReadToEnd();
+
+            RootObject[] factors = JsonConvert.DeserializeObject<RootObject[]>(factorList);
+            string factorID = "";
+            foreach (RootObject factor in factors)
+            {
+
+                if (factor.factorType == "sms")
                 {
-                    Console.WriteLine("Enter Pin");
-                    string pin = Console.ReadLine();
-                    string factorID = factor.id;
-                    HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userProfile.id + "/factors/" + factorID + "/verify");
+                    factorID = factor.id;
+                    HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + factorID + "/verify");
                     httprequest.Headers.Add("Authorization", authToken);
                     httprequest.Method = "POST";
                     httprequest.ContentType = "application/json";
@@ -134,55 +155,38 @@ namespace OktaMFA_Console
                         if (httpResponse.StatusCode.ToString() == "OK" && pin != "")
                         {
                             pinSuccess = "yes";
-                            //Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                            //claims = new Claim[] { claim };
-                            //Console.WriteLine("Pin Success");
-
+                            Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
+                            claims = new Claim[] { claim };
+                            return result;
                         }
-
-                        // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                        //  {
-                        //       var factorResult = streamReader.ReadToEnd();
-                        //   }
-
-                        // using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
-                        //   {
-                        //       var factorResult = streamReader.ReadToEnd();
-                        //      }
 
                     }
                     catch (WebException we)
-                            {
-                                var failResponse = we.Response as HttpWebResponse;
-                                if (failResponse == null)
-                                    throw;
-                                Console.WriteLine("Oh Crap");
-                            }
-                        }
+                    {
+                        var failResponse = we.Response as HttpWebResponse;
+                        if (failResponse == null)
+                            throw;
+                        result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
                     }
+                }
 
-            if (pinSuccess == "yes" || verifyResult == "true")
+
+            }
+
+            if (pinSuccess == "yes" )
             {
                 Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
-                //claims = new Claim[] { claim };
-                Console.WriteLine("we good");
+                claims = new Claim[] { claim };
+                return result;
             }
             else
             {
-                Console.WriteLine("It's broke");
-                //result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
+                result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
             }
-
-            Console.WriteLine("Status is, Pin:" + pinSuccess + " Push:" + verifyResult);
-            Console.ReadLine();
-
-        // Console.WriteLine(factors.factorType);
-
-
-                //     return result;
-            }
-
+            return result;
         }
+
+
 
         public class otpCode
         {
@@ -273,6 +277,7 @@ namespace OktaMFA_Console
             public Deactivate deactivate { get; set; }
             public ChangePassword changePassword { get; set; }
             public Poll poll { get; set; }
+            public Cancel cancel { get; set; }
 
         }
 
@@ -372,8 +377,6 @@ namespace OktaMFA_Console
             public string href { get; set; }
             public Hints hints { get; set; }
         }
+
     }
-
-
-
-
+}

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OktaMFA-ADFS", "OktaMFA-ADF
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OktaMFA-Console", "OktaMFA-Console\OktaMFA-Console.csproj", "{D0D6A4B1-3124-4AF4-8EC6-9748B8689DAC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OktaMFASMS-ADFS", "OktaMFASMS-ADFS\OktaMFASMS-ADFS.csproj", "{CFF32BCB-81A6-492C-B236-E989BBB3186E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{D0D6A4B1-3124-4AF4-8EC6-9748B8689DAC}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D0D6A4B1-3124-4AF4-8EC6-9748B8689DAC}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D0D6A4B1-3124-4AF4-8EC6-9748B8689DAC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CFF32BCB-81A6-492C-B236-E989BBB3186E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CFF32BCB-81A6-492C-B236-E989BBB3186E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CFF32BCB-81A6-492C-B236-E989BBB3186E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CFF32BCB-81A6-492C-B236-E989BBB3186E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
