@@ -137,22 +137,25 @@ namespace OktaMFASMS_ADFS
                 if (factor.factorType == "sms")
                 {
                     factorID = factor.id;
-                    HttpWebRequest httprequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + factorID + "/verify");
-                    httprequest.Headers.Add("Authorization", authToken);
-                    httprequest.Method = "POST";
-                    httprequest.ContentType = "application/json";
+                    HttpWebRequest verifyRequest = (HttpWebRequest)WebRequest.Create(baseUrl + "users/" + userID + "/factors/" + factorID + "/verify");
+                    verifyRequest.Headers.Add("Authorization", authToken);
+                    verifyRequest.Method = "POST";
+                    verifyRequest.ContentType = "application/json";
+
+
                     otpCode otpCode = new otpCode
                     { passCode = pin };
                     string otpString = JsonConvert.SerializeObject(otpCode);
-                    using (var streamWriter = new StreamWriter(httprequest.GetRequestStream()))
+                    using (var streamWriter = new StreamWriter(verifyRequest.GetRequestStream()))
                     {
 
                         streamWriter.Write(otpString);
                     }
+
                     try
                     {
-                        var httpResponse = (HttpWebResponse)httprequest.GetResponse();
-                        if (httpResponse.StatusCode.ToString() == "OK" && pin != "")
+                        var verifyResponse = (HttpWebResponse)verifyRequest.GetResponse();
+                        if (verifyResponse.StatusCode.ToString() == "OK" && pin != "")
                         {
                             pinSuccess = "yes";
                             Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
@@ -166,14 +169,14 @@ namespace OktaMFASMS_ADFS
                         var failResponse = we.Response as HttpWebResponse;
                         if (failResponse == null)
                             throw;
-                        result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
+                        result = new AdapterPresentation("Authentication was unsuccessful, did you enter the sms code correctly?", proofData.Properties["upn"].ToString(), false, proofData.Properties["userID"].ToString());
                     }
                 }
 
 
             }
 
-            if (pinSuccess == "yes" )
+            if (pinSuccess == "yes")
             {
                 Claim claim = new Claim("http://schemas.microsoft.com/ws/2008/06/identity/claims/authenticationmethod", "http://schemas.microsoft.com/ws/2012/12/authmethod/otp");
                 claims = new Claim[] { claim };
@@ -181,7 +184,7 @@ namespace OktaMFASMS_ADFS
             }
             else
             {
-                result = new AdapterPresentation("Authentication failed.", proofData.Properties["upn"].ToString(), false);
+                result = new AdapterPresentation("Authentication was unsuccessful, did you enter the sms code correctly?", proofData.Properties["upn"].ToString(), false, proofData.Properties["userID"].ToString());
             }
             return result;
         }

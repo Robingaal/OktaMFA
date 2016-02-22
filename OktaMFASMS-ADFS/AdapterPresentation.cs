@@ -35,7 +35,7 @@ namespace OktaMFASMS_ADFS
                 result += "<input id=\"authMethod\" type=\"hidden\" name=\"AuthMethod\" value=\"%AuthMethod%\"/>";
                 result += "<input id=\"continueButton\" type=\"submit\" name=\"Continue\" value=\"Continue\" />";
                 result += "<input id=\"upn\" type=\"hidden\" name=\"upn\" value=\"" + this.upn + "\"/>";
-                result += "<input id=\"uId\" type=\"hidden\" name=\"uId\" value=\"" + this.userID + "\"/>";
+                result += "<input id=\"userID\" type=\"hidden\" name=\"userID\" value=\"" + this.userID + "\"/>";
                 result += "</form>";
             }
             return result;
