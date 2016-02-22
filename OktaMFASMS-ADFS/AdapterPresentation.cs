@@ -30,6 +30,7 @@ namespace OktaMFASMS_ADFS
             if (!this.isPermanentFailure)
             {
                 result += "<form method=\"post\" id=\"loginForm\" autocomplete=\"off\">";
+                result += "<p> Enter the SMS code you recieved in the field below, then select Continue </p>";
                 result += "PIN: <input id=\"pin\" name=\"pin\" type=\"password\" />";
                 result += "<input id=\"context\" type=\"hidden\" name=\"Context\" value=\"%Context%\"/>";
                 result += "<input id=\"authMethod\" type=\"hidden\" name=\"AuthMethod\" value=\"%AuthMethod%\"/>";
