@@ -23,8 +23,9 @@ namespace OktaMFA_ADFS
     {
         public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = windir + "\\ADFS\\OktaMFA-ADFS.dll.config";
             System.Configuration.Configuration cfg =
             System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
             string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
@@ -118,9 +119,16 @@ namespace OktaMFA_ADFS
             string userName = proofData.Properties["upn"].ToString();
             string pin = proofData.Properties["pin"].ToString();
             string pollingEndpoint = proofData.Properties["pollingEndpoint"].ToString();
-            string tenantName = "marcjordan";
-            string baseUrl = "https://" + tenantName + ".oktapreview.com/api/v1/";
-            string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
+
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+            System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
+            fileMap.ExeConfigFilename = windir + "\\ADFS\\OktaMFA-ADFS.dll.config";
+            System.Configuration.Configuration cfg =
+            System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
+            string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
+            string authToken = cfg.AppSettings.Settings["apiKey"].Value;
+            string baseUrl = oktaTenant + "/api/v1/";
+
             string pinSuccess = "no";
             string verifyResult = "false";
 

@@ -21,8 +21,9 @@ namespace OktaMFASMS_ADFS
     {
         public IAdapterPresentation BeginAuthentication(System.Security.Claims.Claim identityClaim, System.Net.HttpListenerRequest request, IAuthenticationContext context)
         {
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = windir + "\\ADFS\\OktaMFA-ADFS.dll.config";
             System.Configuration.Configuration cfg =
             System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
             string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
@@ -110,8 +111,11 @@ namespace OktaMFASMS_ADFS
             string userName = proofData.Properties["upn"].ToString();
             string userID = proofData.Properties["userID"].ToString();
             string pin = proofData.Properties["pin"].ToString();
+
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename = "C:\\Admin\\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = windir + "\\ADFS\\OktaMFA-ADFS.dll.config";
+
             System.Configuration.Configuration cfg =
             System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
             string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;

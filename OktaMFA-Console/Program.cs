@@ -28,8 +28,9 @@ namespace OktaMFA_Console
             //string authToken = "SSWS 009RUU8EeUvD-EpOEH1qHL0OZwmCTJK71kzFjsQufr";
             string userID = "";
 
+            string windir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
             System.Configuration.ExeConfigurationFileMap fileMap = new System.Configuration.ExeConfigurationFileMap();
-            fileMap.ExeConfigFilename = @"C:\Admin\OktaMFA-ADFS.dll.config";
+            fileMap.ExeConfigFilename = windir + "\\ADFS\\OktaMFA-ADFS.dll.config";
             System.Configuration.Configuration cfg =
             System.Configuration.ConfigurationManager.OpenMappedExeConfiguration(fileMap, System.Configuration.ConfigurationUserLevel.None);
             string oktaTenant = cfg.AppSettings.Settings["Tenant"].Value;
